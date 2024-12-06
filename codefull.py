@@ -1,4 +1,4 @@
-# COBA TAMBAHIN FILTER DI PAGE 1
+# filter TreatmentPlace ditambahin
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -48,22 +48,31 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
         st.subheader(f"Tabel {index}")
         filtered_df = df.copy()
         
-        # Filter berdasarkan "Provider", "Doctor Name", "Primary Diagnosis", "Product Type"
+        # Filter berdasarkan "Provider", "TreatmentPlace", "Doctor Name", "Primary Diagnosis", "Product Type"
         provider_options = filtered_df['GroupProvider'].dropna().unique()
         selected_provider = st.multiselect(f"[Tabel {index}] Pilih Provider:", provider_options, key=f"provider_{index}")
         if selected_provider:
             filtered_df = filtered_df[filtered_df['GroupProvider'].isin(selected_provider)]
         
+        # Filter berdasarkan "TreatmentPlace"
+        treatment_place_options = filtered_df['TreatmentPlace'].dropna().unique()
+        selected_treatment_place = st.multiselect(f"[Tabel {index}] Pilih Treatment Place:", treatment_place_options, key=f"treatment_place_{index}")
+        if selected_treatment_place:
+            filtered_df = filtered_df[filtered_df['TreatmentPlace'].isin(selected_treatment_place)]
+        
+        # Filter berdasarkan "Doctor Name"
         doctor_options = filtered_df['DoctorName'].dropna().unique()
         selected_doctor = st.multiselect(f"[Tabel {index}] Pilih Doctor Name:", doctor_options, key=f"doctor_{index}")
         if selected_doctor:
             filtered_df = filtered_df[filtered_df['DoctorName'].isin(selected_doctor)]
         
+        # Filter berdasarkan "Primary Diagnosis"
         diagnosis_options = filtered_df['PrimaryDiagnosis'].dropna().unique()
         selected_diagnosis = st.multiselect(f"[Tabel {index}] Pilih Primary Diagnosis:", diagnosis_options, key=f"diagnosis_{index}")
         if selected_diagnosis:
             filtered_df = filtered_df[filtered_df['PrimaryDiagnosis'].isin(selected_diagnosis)]
         
+        # Filter berdasarkan "Product Type"
         product_options = filtered_df['ProductType'].dropna().unique()
         selected_product = st.multiselect(f"[Tabel {index}] Pilih Product Type:", product_options, key=f"product_{index}")
         if selected_product:
