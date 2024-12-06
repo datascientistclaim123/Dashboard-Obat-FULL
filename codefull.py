@@ -130,7 +130,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Distribusi Provider Berdasarkan Obat
-    st.title("Distribusi Provider Berdasarkan Obat")
+    st.title("Distribusi Provider Berdasarkan Obat ")
 
     df = load_data(file_path_2)
 
@@ -141,58 +141,45 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
 
     # Menampilkan preview data
     st.subheader("Preview Data")
-    preview_df = df.copy()
+    st.dataframe(df)
 
-    # Format angka di Preview Data (bulatkan angka dan koma → titik)
-    preview_df['Amount Bill'] = preview_df['Amount Bill'].fillna(0).round().apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Qty'] = preview_df['Qty'].fillna(0).astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].fillna(0).apply(lambda x: round(x, 0)).astype(float).apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
-    st.dataframe(preview_df)
-
-    # Filter dropdown untuk Nama Item, Golongan, Subgolongan, dan Komposisi Zat Aktif
+    # Filter dropdown (logika sama seperti navigasi pertama)
     st.subheader("Filter Data")
-
-    # Filter Nama Item Garda Medika
     item_options = df['Nama Item Garda Medika'].dropna().unique()
-    selected_items = st.multiselect("Pilih Nama Item Garda Medika:", item_options, key="item_filter")
-
-    # Filter Golongan
     golongan_options = df['Golongan'].dropna().unique()
-    selected_golongan = st.multiselect("Pilih Golongan:", golongan_options, key="golongan_filter")
-
-    # Filter Subgolongan
     subgolongan_options = df['Subgolongan'].dropna().unique()
-    selected_subgolongan = st.multiselect("Pilih Subgolongan:", subgolongan_options, key="subgolongan_filter")
-
-    # Filter Komposisi Zat Aktif
     composition_options = df['Komposisi'].dropna().unique()
-    selected_compositions = st.multiselect("Pilih Komposisi Zat Aktif:", composition_options, key="composition_filter")
 
-    # Terapkan filter
-    filtered_df = df.copy()
-    if selected_items:
-        filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-    if selected_golongan:
-        filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
-    if selected_subgolongan:
-        filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
-    if selected_compositions:
-        filtered_df = filtered_df[filtered_df['Komposisi'].isin(selected_compositions)]
+    # Dropdown untuk filter
+    selected_items = st.multiselect("Pilih Nama Item Garda Medika:", item_options, default=item_options)
+    selected_golongan = st.multiselect("Pilih Golongan:", golongan_options, default=golongan_options)
+    selected_subgolongan = st.multiselect("Pilih Subgolongan:", subgolongan_options, default=subgolongan_options)
+    selected_compositions = st.multiselect("Pilih Komposisi Zat Aktif:", composition_options, default=composition_options)
 
+    # Terapkan filter berdasarkan pilihan
+    filtered_df = df[
+        (df['Nama Item Garda Medika'].isin(selected_items)) &
+        (df['Golongan'].isin(selected_golongan)) &
+        (df['Subgolongan'].isin(selected_subgolongan)) &
+        (df['Komposisi'].isin(selected_compositions))
+    ]
+
+    # Menampilkan data hasil filter
     if filtered_df.empty:
         st.warning("Tidak ada data yang sesuai dengan filter yang dipilih.")
     else:
-        # Menampilkan data hasil filter
         st.subheader("Data Hasil Filter")
-        grouped_df = filtered_df.groupby(["Provider", "Nama Item Garda Medika"]).agg(
-            Qty=('Qty', 'sum'),
-            AmountBill=('Amount Bill', 'sum'),
-            HargaSatuan=('Harga Satuan', 'median')
-        ).reset_index()
+        
+        # Kolom yang ditampilkan
+        display_columns = [
+            "Group Provider", "TreatmentPlace", "Nama Item Garda Medika",
+            "Golongan", "Subgolongan", "Komposisi", "Qty", "Amount Bill", "Harga Satuan"
+        ]
 
-        grouped_df['Qty'] = grouped_df['Qty'].astype(int)
-        grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-        grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+        # Format angka di tabel hasil filter
+        filtered_df['Qty'] = filtered_df['Qty'].astype(int)
+        filtered_df['Amount Bill'] = filtered_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+        filtered_df['Harga Satuan'] = filtered_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
-        st.dataframe(grouped_df, height=300)
+        # Tampilkan data yang difilter
+        st.dataframe(filtered_df[display_columns], height=300)
