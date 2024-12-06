@@ -148,7 +148,7 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
     item_options = df['Nama Item Garda Medika'].dropna().unique()
     golongan_options = df['Golongan'].dropna().unique()
     subgolongan_options = df['Subgolongan'].dropna().unique()
-    composition_options = df['Komposisi'].dropna().unique()
+    composition_options = df['Komposisi Zat Aktif'].dropna().unique()
 
     # Dropdown untuk filter
     selected_items = st.multiselect("Pilih Nama Item Garda Medika:", item_options, default=item_options)
