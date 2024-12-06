@@ -21,6 +21,8 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     # Distribusi Penggunaan Obat per Provider
     st.title("Distribusi Penggunaan Obat per Provider 💊")
 
+    
+
     df = load_data(file_path_1)
 
     # Pastikan kolom Qty dan Amount Bill adalah numerik
@@ -142,3 +144,134 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
     if st.button("Insert Tabel Baru"):
         st.session_state.table_count += 1
+
+elif selected_page == "Distribusi Provider Berdasarkan Obat":
+    st.title("Distribusi Provider Berdasarkan Obat 🏥")
+     df = load_data(file_path_2)
+# Pastikan kolom Qty dan Amount Bill adalah numerik
+df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
+df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
+
+# Page: Dashboard Sebaran Obat
+st.title("Distribusi Provider Berdasarkan Obat")
+
+# Menampilkan preview data
+st.subheader("Preview Data")
+
+# Menangani nilai NaN untuk "Harga Satuan" dan menggantinya dengan 0
+df['Harga Satuan'] = (df['Amount Bill'] / df['Qty']).fillna(0)
+
+# Format angka di Preview Data (bulatkan angka dan koma → titik)
+preview_df = df.copy()
+
+# Isi NaN dengan 0 dan pastikan hasilnya dalam tipe float sebelum dibulatkan
+preview_df['Amount Bill'] = preview_df['Amount Bill'].fillna(0).round().apply(lambda x: f"{x:,}".replace(",", "."))
+preview_df['Qty'] = preview_df['Qty'].fillna(0).astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
+preview_df['Harga Satuan'] = preview_df['Harga Satuan'].fillna(0).apply(lambda x: round(x, 0)).astype(float).apply(lambda x: f"{x:,.0f}".replace(",", "."))
+
+st.dataframe(preview_df)
+
+# Container untuk mengelola tabel dinamis
+tabel_container = st.container()
+
+# State untuk menyimpan jumlah tabel yang ditampilkan
+if "table_count" not in st.session_state:
+    st.session_state.table_count = 1  # Mulai dengan 1 tabel
+
+# Fungsi untuk menampilkan tabel berdasarkan filter
+def display_table(index):
+    st.subheader(f"Tabel {index}")
+
+    # Ambil filter dari session_state jika ada
+    selected_items = st.session_state.get(f"item_{index}", [])
+    selected_golongan = st.session_state.get(f"golongan_{index}", [])
+    selected_subgolongan = st.session_state.get(f"subgolongan_{index}", [])
+    selected_compositions = st.session_state.get(f"composition_{index}", [])
+
+    # Filter data berdasarkan semua pilihan saat ini
+    filtered_df = df.copy()
+    if selected_items:
+        filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
+    if selected_golongan:
+        filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
+    if selected_subgolongan:
+        filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
+    if selected_compositions:
+        filtered_df = filtered_df[filtered_df['Komposisi Zat Aktif'].isin(selected_compositions)]
+
+    # Pilihan untuk setiap filter berdasarkan data yang sudah difilter
+    item_options = filtered_df['Nama Item Garda Medika'].dropna().unique()
+    golongan_options = filtered_df['Golongan'].dropna().unique()
+    subgolongan_options = filtered_df['Subgolongan'].dropna().unique()
+    composition_options = filtered_df['Komposisi Zat Aktif'].dropna().unique()
+
+    # Komponen filter
+    selected_items = st.multiselect(
+        f"[Tabel {index}] Pilih Nama Item Garda Medika:",
+        options=item_options,
+        default=selected_items,
+        key=f"item_{index}"
+    )
+    selected_golongan = st.multiselect(
+        f"[Tabel {index}] Pilih Golongan:",
+        options=golongan_options,
+        default=selected_golongan,
+        key=f"golongan_{index}"
+    )
+    selected_subgolongan = st.multiselect(
+        f"[Tabel {index}] Pilih Subgolongan:",
+        options=subgolongan_options,
+        default=selected_subgolongan,
+        key=f"subgolongan_{index}"
+    )
+    selected_compositions = st.multiselect(
+        f"[Tabel {index}] Pilih Komposisi Zat Aktif:",
+        options=composition_options,
+        default=selected_compositions,
+        key=f"composition_{index}"
+    )
+
+    # Filter ulang data berdasarkan input terbaru
+    filtered_df = df.copy()
+    if selected_items:
+        filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
+    if selected_golongan:
+        filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
+    if selected_subgolongan:
+        filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
+    if selected_compositions:
+        filtered_df = filtered_df[filtered_df['Komposisi Zat Aktif'].isin(selected_compositions)]
+
+    if filtered_df.empty:
+        st.warning(f"Tidak ada data untuk filter di tabel {index}.")
+    else:
+        # Mengelompokkan data berdasarkan kolom yang baru
+        filtered_df['Harga Satuan'] = (filtered_df['Amount Bill'] / filtered_df['Qty']).fillna(0)
+        grouped_df = filtered_df.groupby(["GroupProvider", "TreatmentPlace", "Nama Item Garda Medika", 
+                              "Golongan", "Subgolongan", "Komposisi Zat Aktif"]).agg(
+            Qty=('Qty', 'sum'),
+            AmountBill=('Amount Bill', 'sum'),
+            HargaSatuan=('Harga Satuan', 'median')  # Median harga satuan
+        ).reset_index()
+
+        # Format angka di tabel hasil filter (bulatkan angka dan koma → titik)
+        grouped_df['Qty'] = grouped_df['Qty'].astype(int)
+        grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
+        grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].fillna(0).apply(lambda x: round(x, 0)).astype(float).apply(lambda x: f"{x:,.0f}".replace(",", "."))
+
+        # Menampilkan tabel yang sudah difilter
+        st.dataframe(grouped_df, height=300)
+
+        # Total Amount Bill
+        total_amount_bill = grouped_df['AmountBill'].apply(lambda x: int(x.replace(".", ""))).sum()
+        formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
+        st.markdown(f"**Total Amount Bill: {formatted_total}**")
+
+# Menampilkan tabel dinamis
+for i in range(1, st.session_state.table_count + 1):
+    with tabel_container:
+        display_table(i)
+
+# Tombol untuk menambah tabel baru
+if st.button("Insert Tabel Baru"):
+    st.session_state.table_count += 1
