@@ -1,4 +1,4 @@
-#Wordcloud Update 1
+#Wordcloud Update 1 (PAGE 1 UDAH MANTAB)
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
