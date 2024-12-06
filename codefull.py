@@ -142,7 +142,6 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
                 st.session_state.table_count = index + 1
             else:
                 st.button("Tampilkan Tabel Selanjutnya", on_click=display_table, args=(index+1,))
-
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Distribusi Provider Berdasarkan Obat
     st.title("Distribusi Provider Berdasarkan Obat 💊")
