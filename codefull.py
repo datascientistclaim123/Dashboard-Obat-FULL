@@ -147,7 +147,8 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     st.title("Distribusi Provider Berdasarkan Obat 🏥")
-     df = load_data(file_path_2)
+    df = load_data(file_path_2)  # Hapus indentasi ekstra
+
 # Pastikan kolom Qty dan Amount Bill adalah numerik
 df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
 df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
