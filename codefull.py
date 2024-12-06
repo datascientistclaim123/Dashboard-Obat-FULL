@@ -1,4 +1,4 @@
-# filter TreatmentPlace ditambahin
+# treatment place dah bener sekarang mau coba tambah wordcloud nya
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -39,6 +39,17 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
     
     st.dataframe(preview_df)
+    
+    # Menambahkan WordCloud berdasarkan "PrimaryDiagnosis" atau "ProductType"
+    st.subheader("WordCloud untuk Primary Diagnosis")
+    primary_diagnosis_text = " ".join(df['PrimaryDiagnosis'].dropna().astype(str))  # Gabungkan teks diagnosis
+    wordcloud = WordCloud(width=800, height=400, background_color="white").generate(primary_diagnosis_text)
+    
+    # Tampilkan WordCloud
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    st.pyplot(plt)
     
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
@@ -134,6 +145,17 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
     
     st.dataframe(preview_df)
 
+    # Menambahkan WordCloud berdasarkan "PrimaryDiagnosis" atau "ProductType"
+    st.subheader("WordCloud untuk Primary Diagnosis")
+    primary_diagnosis_text = " ".join(df['PrimaryDiagnosis'].dropna().astype(str))  # Gabungkan teks diagnosis
+    wordcloud = WordCloud(width=800, height=400, background_color="white").generate(primary_diagnosis_text)
+    
+    # Tampilkan WordCloud
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    st.pyplot(plt)
+
     if "table_count" not in st.session_state:
         st.session_state.table_count = 1
 
@@ -143,28 +165,3 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
         item_options = filtered_df['Nama Item Garda Medika'].dropna().unique()
         selected_items = st.multiselect(f"[Tabel {index}] Pilih Nama Item Garda Medika:", item_options, key=f"item_{index}")
         if selected_items:
-            filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-        
-        if filtered_df.empty:
-            st.warning(f"Tidak ada data untuk filter di tabel {index}.")
-        else:
-            grouped_df = filtered_df.groupby("GroupProvider").agg(
-                Qty=('Qty', 'sum'),
-                AmountBill=('Amount Bill', 'sum'),
-                HargaSatuan=('Harga Satuan', 'median')
-            ).reset_index()
-            
-            grouped_df['Qty'] = grouped_df['Qty'].astype(int)
-            grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int).apply(lambda x: f"{x:,.0f}".replace(",", "."))
-            
-            # Format kolom 'Harga Satuan'
-            if 'Harga Satuan' in grouped_df.columns:
-                grouped_df['Harga Satuan'] = grouped_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
-            st.dataframe(grouped_df, height=300)
-
-    for i in range(1, st.session_state.table_count + 1):
-        display_table(i)
-
-    if st.button("Insert Tabel Baru"):
-        st.session_state.table_count += 1
