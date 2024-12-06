@@ -1,4 +1,4 @@
-#INI TITIK KOMA NYA UDAH BENER TAPI SI OPSI FILTER BLOM BENER
+# COBA TAMBAHIN FILTER DI PAGE 1
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -48,13 +48,28 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
         st.subheader(f"Tabel {index}")
         filtered_df = df.copy()
         
-        # Filter data
-        group_provider_options = filtered_df['GroupProvider'].dropna().unique()
-        selected_group_providers = st.multiselect(f"[Tabel {index}] Pilih Group Provider:", group_provider_options, key=f"group_provider_{index}")
-        if selected_group_providers:
-            filtered_df = filtered_df[filtered_df['GroupProvider'].isin(selected_group_providers)]
+        # Filter berdasarkan "Provider", "Doctor Name", "Primary Diagnosis", "Product Type"
+        provider_options = filtered_df['GroupProvider'].dropna().unique()
+        selected_provider = st.multiselect(f"[Tabel {index}] Pilih Provider:", provider_options, key=f"provider_{index}")
+        if selected_provider:
+            filtered_df = filtered_df[filtered_df['GroupProvider'].isin(selected_provider)]
+        
+        doctor_options = filtered_df['DoctorName'].dropna().unique()
+        selected_doctor = st.multiselect(f"[Tabel {index}] Pilih Doctor Name:", doctor_options, key=f"doctor_{index}")
+        if selected_doctor:
+            filtered_df = filtered_df[filtered_df['DoctorName'].isin(selected_doctor)]
+        
+        diagnosis_options = filtered_df['PrimaryDiagnosis'].dropna().unique()
+        selected_diagnosis = st.multiselect(f"[Tabel {index}] Pilih Primary Diagnosis:", diagnosis_options, key=f"diagnosis_{index}")
+        if selected_diagnosis:
+            filtered_df = filtered_df[filtered_df['PrimaryDiagnosis'].isin(selected_diagnosis)]
+        
+        product_options = filtered_df['ProductType'].dropna().unique()
+        selected_product = st.multiselect(f"[Tabel {index}] Pilih Product Type:", product_options, key=f"product_{index}")
+        if selected_product:
+            filtered_df = filtered_df[filtered_df['ProductType'].isin(selected_product)]
 
-        # Timeline filter
+        # Filter rentang tanggal
         st.write("Pilih rentang tanggal:")
         min_date = pd.to_datetime(df["TreatmentFinish"].min())
         max_date = pd.to_datetime(df["TreatmentFinish"].max())
