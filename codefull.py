@@ -144,7 +144,8 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
     if st.button("Insert Tabel Baru"):
         st.session_state.table_count += 1
-    elif selected_page == "Distribusi Provider Berdasarkan Obat":
+        
+elif selected_page == "Distribusi Provider Berdasarkan Obat":
     st.title("Distribusi Provider Berdasarkan Obat 🏥")
     df = load_data(file_path_2)
 
