@@ -139,9 +139,16 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
             # Menambahkan tombol untuk menampilkan tabel berikutnya
             if index < st.session_state.table_count:
-                st.session_state.table_count = index + 1
-            else:
-                st.button("Tampilkan Tabel Selanjutnya", on_click=display_table, args=(index+1,))
+                st.button(f"Tampilkan Tabel {index + 1}", key=f"show_button_{index}")
+
+    # Menampilkan tabel dinamis
+    for i in range(1, st.session_state.table_count + 1):
+        display_table(i)
+
+    # Tombol untuk menambah tabel baru
+    if st.button("Insert Tabel Baru"):
+        st.session_state.table_count += 1
+
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Distribusi Provider Berdasarkan Obat
     st.title("Distribusi Provider Berdasarkan Obat 💊")
