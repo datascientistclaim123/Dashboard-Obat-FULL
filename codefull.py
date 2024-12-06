@@ -1,4 +1,4 @@
-#MAU MASUKIN PAGE 2 NYA
+# Masukin filter di Page 2
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -150,35 +150,49 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
 
     st.dataframe(preview_df)
 
-    # State untuk menyimpan jumlah tabel yang ditampilkan
-    if "table_count" not in st.session_state:
-        st.session_state.table_count = 1  # Mulai dengan 1 tabel
+    # Filter dropdown untuk Nama Item, Golongan, Subgolongan, dan Komposisi Zat Aktif
+    st.subheader("Filter Data")
 
-    def display_table(index):
-        st.subheader(f"Tabel {index}")
+    # Filter Nama Item Garda Medika
+    item_options = df['Nama Item Garda Medika'].dropna().unique()
+    selected_items = st.multiselect("Pilih Nama Item Garda Medika:", item_options, key="item_filter")
 
-        selected_items = st.session_state.get(f"item_{index}", [])
-        selected_golongan = st.session_state.get(f"golongan_{index}", [])
-        selected_subgolongan = st.session_state.get(f"subgolongan_{index}", [])
-        selected_compositions = st.session_state.get(f"composition_{index}", [])
+    # Filter Golongan
+    golongan_options = df['Golongan'].dropna().unique()
+    selected_golongan = st.multiselect("Pilih Golongan:", golongan_options, key="golongan_filter")
 
-        filtered_df = df.copy()
-        if selected_items:
-            filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-        if selected_golongan:
-            filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
-        if selected_subgolongan:
-            filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
-        if selected_compositions:
-            filtered_df = filtered_df[filtered_df['Komposisi'].isin(selected_compositions)]
+    # Filter Subgolongan
+    subgolongan_options = df['Subgolongan'].dropna().unique()
+    selected_subgolongan = st.multiselect("Pilih Subgolongan:", subgolongan_options, key="subgolongan_filter")
 
-        if filtered_df.empty:
-            st.warning(f"Tidak ada data untuk tabel {index}.")
-        else:
-            st.dataframe(filtered_df)
+    # Filter Komposisi Zat Aktif
+    composition_options = df['Komposisi'].dropna().unique()
+    selected_compositions = st.multiselect("Pilih Komposisi Zat Aktif:", composition_options, key="composition_filter")
 
-    for i in range(1, st.session_state.table_count + 1):
-        display_table(i)
+    # Terapkan filter
+    filtered_df = df.copy()
+    if selected_items:
+        filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
+    if selected_golongan:
+        filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
+    if selected_subgolongan:
+        filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
+    if selected_compositions:
+        filtered_df = filtered_df[filtered_df['Komposisi'].isin(selected_compositions)]
 
-    if st.button("Insert Tabel Baru"):
-        st.session_state.table_count += 1
+    if filtered_df.empty:
+        st.warning("Tidak ada data yang sesuai dengan filter yang dipilih.")
+    else:
+        # Menampilkan data hasil filter
+        st.subheader("Data Hasil Filter")
+        grouped_df = filtered_df.groupby(["Provider", "Nama Item Garda Medika"]).agg(
+            Qty=('Qty', 'sum'),
+            AmountBill=('Amount Bill', 'sum'),
+            HargaSatuan=('Harga Satuan', 'median')
+        ).reset_index()
+
+        grouped_df['Qty'] = grouped_df['Qty'].astype(int)
+        grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+        grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+
+        st.dataframe(grouped_df, height=300)
