@@ -145,8 +145,10 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
         st.session_state.table_count += 1
 
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
-    st.title("Distribusi Provider Berdasarkan Obat 🏥")
+    st.title("Distribusi Provider Berdasarkan Obat 💊")
+
     df = load_data(file_path_2)
+
 
     # Pastikan kolom Qty dan Amount Bill adalah numerik
     df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
