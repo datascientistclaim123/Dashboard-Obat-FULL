@@ -1,4 +1,4 @@
-# coba tambah wordcloud
+#Wordcloud Update 1
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -39,17 +39,6 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
     
     st.dataframe(preview_df)
-    
-    # Menambahkan WordCloud berdasarkan "PrimaryDiagnosis" atau "ProductType"
-    st.subheader("WordCloud untuk Primary Diagnosis")
-    primary_diagnosis_text = " ".join(df['PrimaryDiagnosis'].dropna().astype(str))  # Gabungkan teks diagnosis
-    wordcloud = WordCloud(width=800, height=400, background_color="white").generate(primary_diagnosis_text)
-    
-    # Tampilkan WordCloud
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
-    st.pyplot(plt)
     
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
@@ -117,73 +106,37 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
             
             st.dataframe(grouped_df, height=300)
 
-    for i in range(1, st.session_state.table_count + 1):
-        display_table(i)
-
-    if st.button("Insert Tabel Baru"):
-        st.session_state.table_count += 1
-
-elif selected_page == "Distribusi Provider Berdasarkan Obat":
-    # Distribusi Provider Berdasarkan Obat
-    st.title("Distribusi Provider Berdasarkan Obat")
-    
-    df = load_data(file_path_2)
-    
-    # Pastikan kolom Qty dan Amount Bill adalah numerik
-    df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
-    df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
-    df['Harga Satuan'] = (df['Amount Bill'] / df['Qty']).fillna(0)
-    
-    # Menampilkan preview data
-    st.subheader("Preview Data")
-    preview_df = df.copy()
-    
-    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
-    preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-    preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-    
-    st.dataframe(preview_df)
-
-    # Menambahkan WordCloud berdasarkan "PrimaryDiagnosis" atau "ProductType"
-    st.subheader("WordCloud untuk Primary Diagnosis")
-    primary_diagnosis_text = " ".join(df['PrimaryDiagnosis'].dropna().astype(str))  # Gabungkan teks diagnosis
-    wordcloud = WordCloud(width=800, height=400, background_color="white").generate(primary_diagnosis_text)
-    
-    # Tampilkan WordCloud
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
-    st.pyplot(plt)
-
-    if "table_count" not in st.session_state:
-        st.session_state.table_count = 1
-
-    def display_table(index):
-        st.subheader(f"Tabel {index}")
-        filtered_df = df.copy()
-        item_options = filtered_df['Nama Item Garda Medika'].dropna().unique()
-        selected_items = st.multiselect(f"[Tabel {index}] Pilih Nama Item Garda Medika:", item_options, key=f"item_{index}")
-        if selected_items:
-            filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-        
-        if filtered_df.empty:
-            st.warning(f"Tidak ada data untuk filter di tabel {index}.")
-        else:
-            grouped_df = filtered_df.groupby("GroupProvider").agg(
-                Qty=('Qty', 'sum'),
-                AmountBill=('Amount Bill', 'sum'),
-                HargaSatuan=('Harga Satuan', 'median')
-            ).reset_index()
+            # WordCloud
+            st.subheader("WordCloud")
             
-            grouped_df['Qty'] = grouped_df['Qty'].astype(int)
-            grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int).apply(lambda x: f"{x:,.0f}".replace(",", "."))
-            
-            # Format kolom 'Harga Satuan'
-            if 'Harga Satuan' in grouped_df.columns:
-                grouped_df['Harga Satuan'] = grouped_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            # Gabungkan semua teks dari kolom 'Nama Item Garda Medika'
+            wordcloud_text = " ".join(grouped_df['Nama Item Garda Medika'].dropna().astype(str))
 
-            st.dataframe(grouped_df, height=300)
+            # Daftar kata yang ingin dihapus
+            excluded_words = ["FORTE", "PLUS", "PLU", "INFLUAN", "INFUSAN", "INFUS", "OTSU", "SP", "D", "S", "XR", "PF", "FC", "FORCE", 
+                              "B", "C", "P", "OTU", "IRPLU", "NEBU", "TEBOKAN", "SS", "N", "G", "ONE", "VIT", "O", "AY", "H", "ETA", 
+                              "WIA", "IV", "IR", "RING", "WATER", "SR", "RL", "PFS", "MR", "DP", "NS", "WIDA", "E", "0D", "BMT", "MINIDOSE",
+                              "Q", "TB", "TABLET", "GP", "MMR", "M", "WI", "Z", "NEO", "MIX", "GRANULE", "TT", "NA", "CL", "L", "FT", "MG", 
+                              "KID", "HCL", "KIDS", "DAILY", "CARE", "F", "NEBULE", "NACL", "PAED", "DEWASA", "ORAL", "BABY", "LFX", "GEL", 
+                              "JELLY", "STRAWBERRY", "NATRIUM", "ENEMA", "DHA", "ORAL", "KA", "EN", "NEW", "BHP", "DUO", "C0", "CO", "AL", 
+                              "GEL", "DMP", "KCL", "PEN", "T", "INJECTION", "PPD", "DS", "SODIUM", "EXPECTORANT", "JUNIOR", "ANAK", "SET",
+                              "0DT", "MINT", "ORIGINAL", "AQUA", "KAPSUL", "KOSONG", "0D", "NEBULES", "PLATINUM", "SPINAL", "DRAGEE", "MINYAK", 
+                              "PHP", "LASAL", "WOUND", "OD", "QV", "CHLORIDA", "ODT", "OP", "COMPLEX", "CENDO", "VITAMIN"]
+            
+            # Gabungkan semua kata yang akan dihapus menjadi pola regex
+            excluded_pattern = r'\b(?:' + '|'.join(map(re.escape, excluded_words)) + r')\b'
+
+            # Hapus kata-kata dalam excluded_words tanpa menghapus bagian dari kata lain
+            wordcloud_text = re.sub(excluded_pattern, '', wordcloud_text, flags=re.IGNORECASE)
+
+            # Buat WordCloud
+            wordcloud = WordCloud(width=800, height=400, background_color="white").generate(wordcloud_text)
+            
+            # Tampilkan WordCloud
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.imshow(wordcloud, interpolation="bilinear")
+            ax.axis("off")
+            st.pyplot(fig)
 
     for i in range(1, st.session_state.table_count + 1):
         display_table(i)
