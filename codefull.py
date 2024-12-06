@@ -21,7 +21,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     # Distribusi Penggunaan Obat per Provider
     st.title("Distribusi Penggunaan Obat per Provider 💊")
 
-    
+
 
     df = load_data(file_path_1)
 
@@ -40,18 +40,6 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
     st.dataframe(preview_df)
-    
-    # Ensure 'AmountBill' is a string, handle NaN and non-string values
-    grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: int(str(x).replace(".", "")) if isinstance(x, str) else x)
-
-    # If there are still non-string types, handle them safely
-    grouped_df['AmountBill'] = pd.to_numeric(grouped_df['AmountBill'], errors='coerce')
-
-    # Now, calculate the total
-    total_amount_bill = grouped_df['AmountBill'].sum()
-    formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
-    st.markdown(f"**Total Amount Bill: {formatted_total}**")
-
 
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
@@ -156,6 +144,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
     if st.button("Insert Tabel Baru"):
         st.session_state.table_count += 1
+    elif selected_page == "Distribusi Provider Berdasarkan Obat":
         
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     st.title("Distribusi Provider Berdasarkan Obat 🏥")
