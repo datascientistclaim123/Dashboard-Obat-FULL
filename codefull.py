@@ -134,9 +134,6 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
     st.title("Distribusi Provider Berdasarkan Obat ")
 
     df = load_data(file_path_2)
-
-@@ -141,58 +141,45 @@
-
     # Menampilkan preview data
     st.subheader("Preview Data")
     preview_df = df.copy()
