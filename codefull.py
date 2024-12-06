@@ -1,3 +1,4 @@
+#INI TITIK KOMA NYA UDAH BENER TAPI SI OPSI FILTER BLOM BENER
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
@@ -30,7 +31,14 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     
     # Menampilkan preview data
     st.subheader("Preview Data")
-    st.dataframe(df)
+    preview_df = df.copy()
+    
+    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
+    preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+    preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
+    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+    
+    st.dataframe(preview_df)
     
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
@@ -66,7 +74,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
             grouped_df['Qty'] = grouped_df['Qty'].astype(int)
             grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int)
             
-            # Format kolom 'Amount Bill' dan 'Harga Satuan'
+            # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Tabel
             if 'AmountBill' in grouped_df.columns:
                 grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
             if 'HargaSatuan' in grouped_df.columns:
@@ -94,9 +102,12 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Menampilkan preview data
     st.subheader("Preview Data")
     preview_df = df.copy()
+    
+    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
     preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
     preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+    
     st.dataframe(preview_df)
 
     if "table_count" not in st.session_state:
