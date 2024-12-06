@@ -40,8 +40,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
     st.dataframe(preview_df)
-
-    # State untuk menyimpan jumlah tabel yang ditampilkan
+# State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
         st.session_state.table_count = 1  # Mulai dengan 1 tabel
 
@@ -144,8 +143,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
     if st.button("Insert Tabel Baru"):
         st.session_state.table_count += 1
-    elif selected_page == "Distribusi Provider Berdasarkan Obat":
-        
+
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     st.title("Distribusi Provider Berdasarkan Obat 🏥")
     df = load_data(file_path_2)
