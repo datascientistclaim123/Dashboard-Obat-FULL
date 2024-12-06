@@ -40,8 +40,12 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
     st.dataframe(preview_df)
-    # Total Amount Bill
-    total_amount_bill = grouped_df['AmountBill'].apply(lambda x: int(x.replace(".", ""))).sum()
+    
+    # If AmountBill is a string with periods, convert it to numeric first
+    grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: int(str(x).replace(".", "")))
+
+    # Then, calculate the total
+    total_amount_bill = grouped_df['AmountBill'].sum()
     formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
     st.markdown(f"**Total Amount Bill: {formatted_total}**")
 
