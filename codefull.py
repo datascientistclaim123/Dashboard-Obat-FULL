@@ -151,7 +151,7 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Distribusi Provider Berdasarkan Obat
-    st.title("Distribusi Provider Berdasarkan Obat 💊")
+    st.title("Distribusi Provider Berdasarkan Obat🏥 ")
 
     df = load_data(file_path_2)
 
