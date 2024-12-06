@@ -21,8 +21,6 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     # Distribusi Penggunaan Obat per Provider
     st.title("Distribusi Penggunaan Obat per Provider 💊")
 
-
-
     df = load_data(file_path_1)
 
     # Pastikan kolom Qty dan Amount Bill adalah numerik
@@ -40,7 +38,8 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
     preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
     st.dataframe(preview_df)
-# State untuk menyimpan jumlah tabel yang ditampilkan
+
+    # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
         st.session_state.table_count = 1  # Mulai dengan 1 tabel
 
@@ -138,33 +137,31 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
             ax.axis("off")
             st.pyplot(fig)
 
-    for i in range(1, st.session_state.table_count + 1):
-        display_table(i)
-
-    if st.button("Insert Tabel Baru"):
-        st.session_state.table_count += 1
+            # Menambahkan tombol untuk menampilkan tabel berikutnya
+            if index < st.session_state.table_count:
+                st.session_state.table_count = index + 1
+            else:
+                st.button("Tampilkan Tabel Selanjutnya", on_click=display_table, args=(index+1,))
 
 elif selected_page == "Distribusi Provider Berdasarkan Obat":
+    # Distribusi Provider Berdasarkan Obat
     st.title("Distribusi Provider Berdasarkan Obat 💊")
 
     df = load_data(file_path_2)
 
-
     # Pastikan kolom Qty dan Amount Bill adalah numerik
     df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
     df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
+    df['Harga Satuan'] = df['Harga Satuan'].round()
 
-    # Page: Dashboard Sebaran Obat
+    # Menampilkan preview data
     st.subheader("Preview Data")
-
-    # Menangani nilai NaN untuk "Harga Satuan" dan menggantinya dengan 0
-    df['Harga Satuan'] = (df['Amount Bill'] / df['Qty']).fillna(0)
-
-    # Format angka di Preview Data (bulatkan angka dan koma → titik)
     preview_df = df.copy()
-    preview_df['Amount Bill'] = preview_df['Amount Bill'].fillna(0).round().apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Qty'] = preview_df['Qty'].fillna(0).astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].fillna(0).apply(lambda x: round(x, 0)).astype(float).apply(lambda x: f"{x:,.0f}".replace(",", "."))
+
+    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
+    preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+    preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
+    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
 
     st.dataframe(preview_df)
 
