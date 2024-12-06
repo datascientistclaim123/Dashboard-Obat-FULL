@@ -41,13 +41,17 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
     st.dataframe(preview_df)
     
-    # If AmountBill is a string with periods, convert it to numeric first
-    grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: int(str(x).replace(".", "")))
+    # Ensure 'AmountBill' is a string, handle NaN and non-string values
+    grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: int(str(x).replace(".", "")) if isinstance(x, str) else x)
 
-    # Then, calculate the total
+    # If there are still non-string types, handle them safely
+    grouped_df['AmountBill'] = pd.to_numeric(grouped_df['AmountBill'], errors='coerce')
+
+    # Now, calculate the total
     total_amount_bill = grouped_df['AmountBill'].sum()
     formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
     st.markdown(f"**Total Amount Bill: {formatted_total}**")
+
 
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
