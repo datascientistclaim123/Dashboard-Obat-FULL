@@ -65,6 +65,11 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
             ).reset_index()
             grouped_df['Qty'] = grouped_df['Qty'].astype(int)
             grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int)
+            
+            # Pastikan kolom 'Harga Satuan' ada sebelum melakukan format
+            if 'Harga Satuan' in grouped_df.columns:
+                grouped_df['Harga Satuan'] = grouped_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            
             st.dataframe(grouped_df, height=300)
 
     for i in range(1, st.session_state.table_count + 1):
@@ -111,9 +116,14 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
                 AmountBill=('Amount Bill', 'sum'),
                 HargaSatuan=('Harga Satuan', 'median')
             ).reset_index()
+            
             grouped_df['Qty'] = grouped_df['Qty'].astype(int)
             grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int).apply(lambda x: f"{x:,.0f}".replace(",", "."))
-            grouped_df['Harga Satuan'] = grouped_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            
+            # Pastikan kolom 'Harga Satuan' ada sebelum melakukan format
+            if 'Harga Satuan' in grouped_df.columns:
+                grouped_df['Harga Satuan'] = grouped_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+
             st.dataframe(grouped_df, height=300)
 
     for i in range(1, st.session_state.table_count + 1):
