@@ -10,7 +10,7 @@ def load_data(file_path):
     return pd.read_excel(file_path)
 
 # File data untuk dashboard
-df = load_data("Data Obat Input Billing Manual - Updated 18122024 - MIKA Take Out.xlsx")  # Ganti dengan path file yang sesuai
+df = load_data()  # Ganti dengan path file yang sesuai
 
 # Pastikan kolom Qty dan Amount Bill adalah numerik
 df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
