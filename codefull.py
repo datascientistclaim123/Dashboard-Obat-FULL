@@ -10,117 +10,180 @@ def load_data(file_path):
     return pd.read_excel(file_path)
 
 # File data untuk kedua navigasi
-file_path_1 = "Data Obat Input Billing Manual - Updated 05122024.xlsx"  # Ganti dengan path file yang sesuai
-file_path_2 = "Data Obat Input Billing Manual Revisi.xlsx"  # Ganti dengan path file yang sesuai
+df = "Data Obat Input Billing Manual - Updated 18122024 - MIKA Removed.xlsx"  # Ganti dengan path file yang sesuai
+
+# Pastikan kolom Qty dan Amount Bill adalah numerik
+df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
+df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
+df['Harga Satuan'] = df['Harga Satuan'].round()
 
 # Sidebar untuk navigasi
 st.sidebar.title("Navigasi")
-selected_page = st.sidebar.radio("Pilih Halaman:", ["Distribusi Penggunaan Obat per Provider", "Distribusi Provider Berdasarkan Obat"])
+selected_page = st.sidebar.radio("Pilih Halaman:", ["Distribusi Penggunaan Obat per Provider", "Rekomendasi Substitusi Obat"])
 
 if selected_page == "Distribusi Penggunaan Obat per Provider":
-    # Distribusi Penggunaan Obat per Provider
-    st.title("Distribusi Penggunaan Obat per Provider 💊")
+    # Page 1: Dashboard Sebaran Obat
+    st.title("Dashboard Sebaran Obat di Tiap Provider 💊")
 
-    df = load_data(file_path_1)
-
-    # Pastikan kolom Qty dan Amount Bill adalah numerik
-    df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
-    df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
-    df['Harga Satuan'] = df['Harga Satuan'].round()
+    # st.markdown("<small>Created by: Dexcel Oswald Otniel</small>", unsafe_allow_html=True)
 
     # Menampilkan preview data
     st.subheader("Preview Data")
-    preview_df = df.copy()
+    st.dataframe(df)
 
-    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
-    preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-    preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
-    st.dataframe(preview_df)
+    # Container untuk mengelola tabel dinamis
+    tabel_container = st.container()
 
     # State untuk menyimpan jumlah tabel yang ditampilkan
     if "table_count" not in st.session_state:
         st.session_state.table_count = 1  # Mulai dengan 1 tabel
 
+    df['TreatmentFinish'] = pd.to_datetime(df['TreatmentFinish'], errors='coerce')
+
+    # Fungsi untuk menampilkan tabel berdasarkan filter
     def display_table(index):
         st.subheader(f"Tabel {index}")
+
+        # Ambil filter dari session_state jika ada
+        selected_group_providers = st.session_state.get(f"group_provider_{index}", [])
+        selected_treatment_places = st.session_state.get(f"treatment_place_{index}", [])
+        selected_doctors = st.session_state.get(f"doctor_name_{index}", [])
+        selected_diagnosis = st.session_state.get(f"primary_diagnosis_{index}", [])
+        selected_product_types = st.session_state.get(f"product_type_{index}", [])
+        selected_date_range = st.session_state.get(f"date_range_{index}", [None, None])
+
+        # Filter data berdasarkan semua pilihan saat ini
         filtered_df = df.copy()
 
-        # Filter berdasarkan "Provider", "TreatmentPlace", "Doctor Name", "Primary Diagnosis", "Product Type"
-        provider_options = filtered_df['GroupProvider'].dropna().unique()
-        selected_provider = st.multiselect(f"[Tabel {index}] Pilih Provider:", provider_options, key=f"provider_{index}")
-        if selected_provider:
-            filtered_df = filtered_df[filtered_df['GroupProvider'].isin(selected_provider)]
+        # Komponen filter - Pilih Group Provider
+        group_provider_options = filtered_df['GroupProvider'].dropna().unique()
+        selected_group_providers = st.multiselect(
+            f"[Tabel {index}] Pilih Group Provider:",
+            options=group_provider_options,
+            default=selected_group_providers,
+            key=f"group_provider_{index}"
+        )
 
-        # Filter berdasarkan "TreatmentPlace"
+        if selected_group_providers:
+            filtered_df = filtered_df[filtered_df['GroupProvider'].isin(selected_group_providers)]
+        
         treatment_place_options = filtered_df['TreatmentPlace'].dropna().unique()
-        selected_treatment_place = st.multiselect(f"[Tabel {index}] Pilih Treatment Place:", treatment_place_options, key=f"treatment_place_{index}")
-        if selected_treatment_place:
-            filtered_df = filtered_df[filtered_df['TreatmentPlace'].isin(selected_treatment_place)]
+        selected_treatment_places = st.multiselect(
+            f"[Tabel {index}] Pilih Provider:",
+            options=treatment_place_options,
+            default=selected_treatment_places,
+            key=f"treatment_place_{index}"
+        )
 
-        # Filter berdasarkan "Doctor Name"
+        if selected_treatment_places:
+            filtered_df = filtered_df[filtered_df['TreatmentPlace'].isin(selected_treatment_places)]
+        
         doctor_options = filtered_df['DoctorName'].dropna().unique()
-        selected_doctor = st.multiselect(f"[Tabel {index}] Pilih Doctor Name:", doctor_options, key=f"doctor_{index}")
-        if selected_doctor:
-            filtered_df = filtered_df[filtered_df['DoctorName'].isin(selected_doctor)]
+        selected_doctors = st.multiselect(
+            f"[Tabel {index}] Pilih Doctor Name:",
+            options=doctor_options,
+            default=selected_doctors,
+            key=f"doctor_name_{index}"
+        )
 
-        # Filter berdasarkan "Primary Diagnosis"
+        if selected_doctors:
+            filtered_df = filtered_df[filtered_df['DoctorName'].isin(selected_doctors)]
+        
         diagnosis_options = filtered_df['PrimaryDiagnosis'].dropna().unique()
-        selected_diagnosis = st.multiselect(f"[Tabel {index}] Pilih Primary Diagnosis:", diagnosis_options, key=f"diagnosis_{index}")
+        selected_diagnosis = st.multiselect(
+            f"[Tabel {index}] Pilih Primary Diagnosis:",
+            options=diagnosis_options,
+            default=selected_diagnosis,
+            key=f"primary_diagnosis_{index}"
+        )
+
         if selected_diagnosis:
             filtered_df = filtered_df[filtered_df['PrimaryDiagnosis'].isin(selected_diagnosis)]
+        
+        product_type_options = filtered_df['ProductType'].dropna().unique()
+        selected_product_types = st.multiselect(
+            f"[Tabel {index}] Pilih Product Type:",
+            options=product_type_options,
+            default=selected_product_types,
+            key=f"product_type_{index}"
+        )
 
-        # Filter berdasarkan "Product Type"
-        product_options = filtered_df['ProductType'].dropna().unique()
-        selected_product = st.multiselect(f"[Tabel {index}] Pilih Product Type:", product_options, key=f"product_{index}")
-        if selected_product:
-            filtered_df = filtered_df[filtered_df['ProductType'].isin(selected_product)]
-
-        # Filter rentang tanggal
+        if selected_product_types:
+            filtered_df = filtered_df[filtered_df['ProductType'].isin(selected_product_types)]
+        
+        # Fitur Timeline
         st.write("Pilih rentang tanggal:")
         min_date = pd.to_datetime(df["TreatmentFinish"].min())
         max_date = pd.to_datetime(df["TreatmentFinish"].max())
-        date_range = st.date_input(f"[Tabel {index}] Rentang Tanggal:", value=(min_date, max_date), min_value=min_date, max_value=max_date, key=f"date_range_{index}")
-        if len(date_range) == 2:
+
+        # Periksa apakah session_state untuk date_range sudah ada, jika belum, inisialisasi
+        if f"date_range_{index}" not in st.session_state:
+            st.session_state[f"date_range_{index}"] = [min_date, max_date]
+        
+        date_range = st.date_input(f"[Tabel {index}] Rentang Tanggal:",
+                                   value=(selected_date_range if all(selected_date_range) else [min_date, max_date]),
+                                   min_value=min_date, max_value=max_date, key=f"date_range_{index}")
+
+        # Hanya menyimpan kembali rentang tanggal ke session_state setelah perubahan
+        if date_range != st.session_state[f"date_range_{index}"]:
+            st.session_state[f"date_range_{index}"] = date_range
+
+        # Filter data berdasarkan rentang tanggal
+        if len(date_range) == 2 and all(date_range):
             start_date, end_date = pd.to_datetime(date_range)
-            filtered_df = filtered_df[(pd.to_datetime(filtered_df['TreatmentFinish']) >= start_date) & (pd.to_datetime(filtered_df['TreatmentFinish']) <= end_date)]
+            filtered_df = filtered_df[
+                (pd.to_datetime(filtered_df['TreatmentFinish']) >= start_date) &
+                (pd.to_datetime(filtered_df['TreatmentFinish']) <= end_date)]
 
         if filtered_df.empty:
             st.warning(f"Tidak ada data untuk filter di tabel {index}.")
         else:
+            # Mengelompokkan berdasarkan "Nama Item Garda Medika"
             grouped_df = filtered_df.groupby("Nama Item Garda Medika").agg(
                 Qty=('Qty', 'sum'),
                 AmountBill=('Amount Bill', 'sum'),
-                HargaSatuan=('Harga Satuan', 'median')
+                HargaSatuan=('Harga Satuan', 'median'),
+                Golongan=('Golongan', 'first'),
+                Subgolongan=('Subgolongan', 'first'),
+                KomposisiZatAktif=('Komposisi Zat Aktif', 'first')
             ).reset_index()
+
+            # Hilangkan desimal dengan pembulatan
             grouped_df['Qty'] = grouped_df['Qty'].astype(int)
             grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int)
+            grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].fillna(0).round(0).astype(int)
 
-            # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Tabel
-            if 'AmountBill' in grouped_df.columns:
-                grouped_df['AmountBill'] = grouped_df['AmountBill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-            if 'HargaSatuan' in grouped_df.columns:
-                grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
+            # Pindahkan kolom Qty, Amount Bill, dan Harga Satuan ke paling kanan
+            column_order = [
+                col for col in grouped_df.columns if col not in ['Qty', 'AmountBill', 'HargaSatuan']
+            ] + ['Qty', 'AmountBill', 'HargaSatuan']
+            grouped_df = grouped_df[column_order]
 
+            # Menampilkan tabel yang sudah digabungkan
             st.dataframe(grouped_df, height=300)
+
+            # Total Amount Bill
+            if 'AmountBill' in grouped_df.columns:
+                total_amount_bill = grouped_df['AmountBill'].sum()
+                formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
+                st.markdown(f"**Total Amount Bill: {formatted_total}**")
+            else:
+                st.warning("Kolom 'Amount Bill' tidak ditemukan di dataset.")
 
             # WordCloud
             st.subheader("WordCloud")
-
+            
             # Gabungkan semua teks dari kolom 'Nama Item Garda Medika'
             wordcloud_text = " ".join(grouped_df['Nama Item Garda Medika'].dropna().astype(str))
 
             # Daftar kata yang ingin dihapus
-            excluded_words = ["FORTE", "PLUS", "PLU", "INFLUAN", "INFUSAN", "INFUS", "OTSU", "SP", "D", "S", "XR", "PF", "FC", "FORCE", 
-                              "B", "C", "P", "OTU", "IRPLU", "NEBU", "TEBOKAN", "SS", "N", "G", "ONE", "VIT", "O", "AY", "H", "ETA", 
-                              "WIA", "IV", "IR", "RING", "WATER", "SR", "RL", "PFS", "MR", "DP", "NS", "WIDA", "E", "0D", "BMT", "MINIDOSE",
-                              "Q", "TB", "TABLET", "GP", "MMR", "M", "WI", "Z", "NEO", "MIX", "GRANULE", "TT", "NA", "CL", "L", "FT", "MG", 
-                              "KID", "HCL", "KIDS", "DAILY", "CARE", "F", "NEBULE", "NACL", "PAED", "DEWASA", "ORAL", "BABY", "LFX", "GEL", 
-                              "JELLY", "STRAWBERRY", "NATRIUM", "ENEMA", "DHA", "ORAL", "KA", "EN", "NEW", "BHP", "DUO", "C0", "CO", "AL", 
-                              "GEL", "DMP", "KCL", "PEN", "T", "INJECTION", "PPD", "DS", "SODIUM", "EXPECTORANT", "JUNIOR", "ANAK", "SET",
-                              "0DT", "MINT", "ORIGINAL", "AQUA", "KAPSUL", "KOSONG", "0D", "NEBULES", "PLATINUM", "SPINAL", "DRAGEE", "MINYAK", 
-                              "PHP", "LASAL", "WOUND", "OD", "QV", "CHLORIDA", "ODT", "OP", "COMPLEX", "CENDO", "VITAMIN"]
+            excluded_words = ["FORTE","PLUS","PLU","INFLUAN","INFUSAN","INFUS","OTSU","SP","D","S","XR","PF","FC","FORCE","B","C","P","OTU","IRPLU","NEBU","TEBOKAN","SS",
+                              "N","G","ONE","VIT","O","AY","H","ETA","WIA","IV","IR","RING","WATER","SR","RL","PFS","MR","DP","NS","WIDA" ,"E","0D","BMT","MINIDOSE",
+                              "Q", "TB", "TABLET", "GP", "MMR", "M", "WI", "Z", "NEO", "MIX", "GRANULE", "TT", "NA", "CL", "L", "FT", "MG", "KID", "HCL", "KIDS","DAILY",
+                              "CARE", "F", "NEBULE", "NACL", "PAED", "DEWASA", "ORAL", "BABY", "LFX", "GEL", "JELLY", "STRAWBERRY", "NATRIUM", "ENEMA", "DHA", "ORAL",
+                              "KA","EN","NEW","BHP","DUO","C0","CO","AL","GEL","DMP","KCL","PEN","T","INJECTION","PPD","DS","SODIUM","EXPECTORANT","JUNIOR","ANAK","SET",
+                              "0DT", "MINT", "ORIGINAL", "AQUA", "KAPSUL","KOSONG", "0D","NEBULES","PLATINUM","SPINAL","DRAGEE","MINYAK","PHP","LASAL","WOUND","OD","QV",
+                              "CHLORIDA","ODT","OP","COMPLEX","CENDO","VITAMIN"]
 
             # Gabungkan semua kata yang akan dihapus menjadi pola regex
             excluded_pattern = r'\b(?:' + '|'.join(map(re.escape, excluded_words)) + r')\b'
@@ -130,142 +193,12 @@ if selected_page == "Distribusi Penggunaan Obat per Provider":
 
             # Buat WordCloud
             wordcloud = WordCloud(width=800, height=400, background_color="white").generate(wordcloud_text)
-
+            
             # Tampilkan WordCloud
             fig, ax = plt.subplots(figsize=(10, 5))
             ax.imshow(wordcloud, interpolation="bilinear")
             ax.axis("off")
             st.pyplot(fig)
-
-            # Menambahkan tombol untuk menampilkan tabel berikutnya
-            if index < st.session_state.table_count:
-                st.button(f"Tampilkan Tabel {index + 1}", key=f"show_button_{index}")
-
-    # Menampilkan tabel dinamis
-    for i in range(1, st.session_state.table_count + 1):
-        display_table(i)
-
-    # Tombol untuk menambah tabel baru
-    if st.button("Insert Tabel Baru"):
-        st.session_state.table_count += 1
-
-elif selected_page == "Distribusi Provider Berdasarkan Obat":
-    # Distribusi Provider Berdasarkan Obat
-    st.title("Distribusi Provider Berdasarkan Obat🏥 ")
-
-    df = load_data(file_path_2)
-
-    # Pastikan kolom Qty dan Amount Bill adalah numerik
-    df['Qty'] = pd.to_numeric(df['Qty'], errors='coerce').fillna(0)
-    df['Amount Bill'] = pd.to_numeric(df['Amount Bill'], errors='coerce').fillna(0)
-    df['Harga Satuan'] = df['Harga Satuan'].round()
-
-    # Menampilkan preview data
-    st.subheader("Preview Data")
-    preview_df = df.copy()
-
-    # Format kolom 'Amount Bill' dan 'Harga Satuan' untuk Preview Data
-    preview_df['Amount Bill'] = preview_df['Amount Bill'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-    preview_df['Qty'] = preview_df['Qty'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    preview_df['Harga Satuan'] = preview_df['Harga Satuan'].apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
-    st.dataframe(preview_df)
-
-    # Container untuk mengelola tabel dinamis
-    tabel_container = st.container()
-
-    # State untuk menyimpan jumlah tabel yang ditampilkan
-    if "table_count" not in st.session_state:
-        st.session_state.table_count = 1  # Mulai dengan 1 tabel
-
-    # Fungsi untuk menampilkan tabel berdasarkan filter
-    def display_table(index):
-        st.subheader(f"Tabel {index}")
-
-        # Ambil filter dari session_state jika ada
-        selected_items = st.session_state.get(f"item_{index}", [])
-        selected_golongan = st.session_state.get(f"golongan_{index}", [])
-        selected_subgolongan = st.session_state.get(f"subgolongan_{index}", [])
-        selected_compositions = st.session_state.get(f"composition_{index}", [])
-
-        # Filter data berdasarkan semua pilihan saat ini
-        filtered_df = df.copy()
-        if selected_items:
-            filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-        if selected_golongan:
-            filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
-        if selected_subgolongan:
-            filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
-        if selected_compositions:
-            filtered_df = filtered_df[filtered_df['Komposisi Zat Aktif'].isin(selected_compositions)]
-
-        # Pilihan untuk setiap filter berdasarkan data yang sudah difilter
-        item_options = filtered_df['Nama Item Garda Medika'].dropna().unique()
-        golongan_options = filtered_df['Golongan'].dropna().unique()
-        subgolongan_options = filtered_df['Subgolongan'].dropna().unique()
-        composition_options = filtered_df['Komposisi Zat Aktif'].dropna().unique()
-
-        # Komponen filter
-        selected_items = st.multiselect(
-            f"[Tabel {index}] Pilih Nama Item Garda Medika:",
-            options=item_options,
-            default=selected_items,
-            key=f"item_{index}"
-        )
-        selected_golongan = st.multiselect(
-            f"[Tabel {index}] Pilih Golongan:",
-            options=golongan_options,
-            default=selected_golongan,
-            key=f"golongan_{index}"
-        )
-        selected_subgolongan = st.multiselect(
-            f"[Tabel {index}] Pilih Subgolongan:",
-            options=subgolongan_options,
-            default=selected_subgolongan,
-            key=f"subgolongan_{index}"
-        )
-        selected_compositions = st.multiselect(
-            f"[Tabel {index}] Pilih Komposisi Zat Aktif:",
-            options=composition_options,
-            default=selected_compositions,
-            key=f"composition_{index}"
-        )
-
-        # Filter ulang data berdasarkan input terbaru
-        filtered_df = df.copy()
-        if selected_items:
-            filtered_df = filtered_df[filtered_df['Nama Item Garda Medika'].isin(selected_items)]
-        if selected_golongan:
-            filtered_df = filtered_df[filtered_df['Golongan'].isin(selected_golongan)]
-        if selected_subgolongan:
-            filtered_df = filtered_df[filtered_df['Subgolongan'].isin(selected_subgolongan)]
-        if selected_compositions:
-            filtered_df = filtered_df[filtered_df['Komposisi Zat Aktif'].isin(selected_compositions)]
-
-        if filtered_df.empty:
-            st.warning(f"Tidak ada data untuk filter di tabel {index}.")
-        else:
-            # Mengelompokkan data berdasarkan kolom yang baru
-            filtered_df['Harga Satuan'] = (filtered_df['Amount Bill'] / filtered_df['Qty']).fillna(0)
-            grouped_df = filtered_df.groupby(["GroupProvider", "TreatmentPlace", "Nama Item Garda Medika", 
-                                "Golongan", "Subgolongan", "Komposisi Zat Aktif"]).agg(
-                Qty=('Qty', 'sum'),
-                AmountBill=('Amount Bill', 'sum'),
-                HargaSatuan=('Harga Satuan', 'median')  # Median harga satuan
-            ).reset_index()
-
-            # Format angka di tabel hasil filter (bulatkan angka dan koma → titik)
-            grouped_df['Qty'] = grouped_df['Qty'].astype(int)
-            grouped_df['AmountBill'] = grouped_df['AmountBill'].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-            grouped_df['HargaSatuan'] = grouped_df['HargaSatuan'].fillna(0).apply(lambda x: round(x, 0)).astype(float).apply(lambda x: f"{x:,.0f}".replace(",", "."))
-
-            # Menampilkan tabel yang sudah difilter
-            st.dataframe(grouped_df, height=300)
-
-            # Total Amount Bill
-            total_amount_bill = grouped_df['AmountBill'].apply(lambda x: int(x.replace(".", ""))).sum()
-            formatted_total = f"Rp {total_amount_bill:,.0f}".replace(",", ".")
-            st.markdown(f"**Total Amount Bill: {formatted_total}**")
 
     # Menampilkan tabel dinamis
     for i in range(1, st.session_state.table_count + 1):
@@ -275,3 +208,148 @@ elif selected_page == "Distribusi Provider Berdasarkan Obat":
     # Tombol untuk menambah tabel baru
     if st.button("Insert Tabel Baru"):
         st.session_state.table_count += 1
+
+elif selected_page == "Rekomendasi Substitusi Obat":
+    # Title
+    st.title("Dashboard Rekomendasi Substitusi Obat 💊")
+
+    # Input untuk filter range tanggal
+    st.sidebar.header("Filter")
+    date_range = st.sidebar.date_input(
+        "Pilih Rentang Tanggal:",
+        value=[df['TreatmentFinish'].min(), df['TreatmentFinish'].max()],
+        min_value=df['TreatmentFinish'].min(),
+        max_value=df['TreatmentFinish'].max(),
+        key="date_range"
+    )
+
+    # Mendefinisikan filtered_df terlebih dahulu dengan dataset asli df
+    filtered_df = df.copy()
+
+    # Pastikan date_range valid (rentang tanggal tidak kosong)
+    if len(date_range) == 2:
+        start_date, end_date = date_range
+        filtered_df = filtered_df[(filtered_df['TreatmentFinish'] >= pd.Timestamp(start_date)) &
+                                (filtered_df['TreatmentFinish'] <= pd.Timestamp(end_date))]
+    else:
+        st.error("Silakan pilih rentang tanggal yang valid.")
+
+    # Dropdown filter lainnya
+    nama_obat = st.sidebar.selectbox("Pilih Nama Item Obat:", df['Nama Item Garda Medika'].unique())
+    treatment_place = st.sidebar.selectbox("Pilih TreatmentPlace (RS/Klinik):", df['TreatmentPlace'].unique())
+
+    # Filter data berdasarkan input
+    filtered_df_input = filtered_df[(filtered_df['Nama Item Garda Medika'] == nama_obat) & 
+                                    (filtered_df['TreatmentPlace'] == treatment_place)]
+
+    if not filtered_df_input.empty:
+        # Statistik obat
+        total_qty = filtered_df_input['Qty'].sum()
+        total_amount_bill = filtered_df_input['Amount Bill'].sum()
+        median_harga_satuan = filtered_df_input['Harga Satuan'].median()
+
+        st.subheader("Statistik Obat yang Dipilih")
+        st.write(f"**Total Qty:** {int(total_qty)}")
+        st.write(f"**Total Amount Bill:** Rp {int(total_amount_bill):,}")
+        st.write(f"**Harga Satuan:** Rp {int(median_harga_satuan):,}")
+
+        # Filter rekomendasi obat
+        komposisi_zat_aktif = filtered_df_input['Komposisi Zat Aktif'].iloc[0]
+        rekomendasi_df = filtered_df[(filtered_df['Komposisi Zat Aktif'] == komposisi_zat_aktif) & (filtered_df['Nama Item Garda Medika'] != nama_obat)]
+
+        # Agregasi untuk rekomendasi
+        def aggregate_data(data):
+            grouped = data.groupby(['Nama Item Garda Medika', 'TreatmentPlace']).agg(
+                GroupProvider=('GroupProvider', 'first'),
+                Golongan=('Golongan', 'first'),
+                Subgolongan=('Subgolongan', 'first'),
+                KomposisiZatAktif=('Komposisi Zat Aktif', 'first'),
+                TotalQty=('Qty', 'sum'),
+                TotalAmountBill=('Amount Bill', 'sum'),
+                HargaSatuan=('Harga Satuan', 'median')
+            ).reset_index()
+            return grouped
+        
+        # Fungsi untuk membulatkan kolom angka dan memperbaiki format
+        def format_columns(df):
+            df['TotalQty'] = df['TotalQty'].round(0).astype(int)
+            df['TotalAmountBill'] = df['TotalAmountBill'].round(0).astype(int)
+            df['HargaSatuan'] = df['HargaSatuan'].round(0).astype(int)
+            if 'Cost Saving (%)' in df.columns:
+                df['Cost Saving (%)'] = df['Cost Saving (%)'].round(2)
+            return df
+        
+        # Fungsi untuk memberi warna berdasarkan nilai
+        def colorize(val):
+            color = 'green' if val < 0 else 'red'  # Hijau untuk negatif, merah untuk positif
+            return f'background-color: {color}; color: white;'  # Menambahkan warna latar belakang dan teks
+
+        # Rekomendasi di RS sama
+        rekomendasi_same_rs = rekomendasi_df[rekomendasi_df['TreatmentPlace'] == treatment_place]
+        if not rekomendasi_same_rs.empty:
+            rekomendasi_same_rs_grouped = aggregate_data(rekomendasi_same_rs)
+            rekomendasi_same_rs_grouped['Cost Saving per Satuan'] = (
+                rekomendasi_same_rs_grouped['HargaSatuan'] - median_harga_satuan
+            )
+            rekomendasi_same_rs_grouped['Cost Saving Amount'] = (
+                (rekomendasi_same_rs_grouped['HargaSatuan'] - median_harga_satuan) * total_qty
+            )
+            rekomendasi_same_rs_grouped['Cost Saving (%)'] = (
+                (rekomendasi_same_rs_grouped['HargaSatuan'] - median_harga_satuan) / median_harga_satuan * 100
+            )
+
+            # Format Kolom Angka & Styler Cost Saving
+            rekomendasi_same_rs_grouped = format_columns(rekomendasi_same_rs_grouped).style.applymap(colorize, subset=["Cost Saving per Satuan", "Cost Saving Amount", "Cost Saving (%)"])
+
+            # Format angka di kolom "Cost Saving (%)"
+            rekomendasi_same_rs_grouped = rekomendasi_same_rs_grouped.format({
+                'Cost Saving (%)': "{:+.2f}%", # Format dua angka belakang koma
+                'Cost Saving per Satuan': "{:+,.0f}", # Format pemisah ribuan
+                'Cost Saving Amount': "{:+,.0f}", # Format pemisah ribuan
+                'TotalAmountBill': "{:,.0f}", # Format pemisah ribuan
+                'HargaSatuan': "{:,.0f}" # Format pemisah ribuan
+            })
+
+            st.subheader("Rekomendasi Obat Substitusi (RS Sama)")
+            st.dataframe(rekomendasi_same_rs_grouped)
+        else:
+            st.write("Tidak ada rekomendasi substitusi di RS yang sama.")
+
+        # Rekomendasi di RS lain (semua RS lain tanpa pembatasan)
+        rekomendasi_other_rs = rekomendasi_df[rekomendasi_df['TreatmentPlace'] != treatment_place]
+        if not rekomendasi_other_rs.empty:
+            rekomendasi_other_rs_grouped = aggregate_data(rekomendasi_other_rs)
+            rekomendasi_other_rs_grouped['Cost Saving per Satuan'] = (
+                rekomendasi_other_rs_grouped['HargaSatuan'] - median_harga_satuan
+            )
+            rekomendasi_other_rs_grouped['Cost Saving Amount'] = (
+                (rekomendasi_other_rs_grouped['HargaSatuan'] - median_harga_satuan) * total_qty
+            )
+            rekomendasi_other_rs_grouped['Cost Saving (%)'] = (
+                (rekomendasi_other_rs_grouped['HargaSatuan'] - median_harga_satuan) / median_harga_satuan * 100
+            )
+        
+            # Sort by Nama Item Obat and TreatmentPlace
+            rekomendasi_other_rs_grouped = rekomendasi_other_rs_grouped.sort_values(
+                by=['TreatmentPlace', 'Nama Item Garda Medika'], 
+                ascending=[True, True]
+            )
+
+            # Format Kolom Angka & Styler Cost Saving
+            rekomendasi_other_rs_grouped = format_columns(rekomendasi_other_rs_grouped).style.applymap(colorize, subset=["Cost Saving per Satuan", "Cost Saving Amount", "Cost Saving (%)"])
+
+            # Format angka di kolom "Cost Saving (%)"
+            rekomendasi_other_rs_grouped = rekomendasi_other_rs_grouped.format({
+                'Cost Saving (%)': "{:+.2f}%", # Format dua angka belakang koma
+                'Cost Saving per Satuan': "{:+,.0f}", # Format pemisah ribuan
+                'Cost Saving Amount': "{:+,.0f}", # Format pemisah ribuan
+                'TotalAmountBill': "{:,.0f}", # Format pemisah ribuan
+                'HargaSatuan': "{:,.0f}" # Format pemisah ribuan
+            })
+        
+            st.subheader("Rekomendasi Obat Substitusi (RS Lain)")
+            st.dataframe(rekomendasi_other_rs_grouped)
+        else:
+            st.write("Tidak ada rekomendasi substitusi di RS lain.")
+    else:
+        st.write("Tidak ada data yang sesuai dengan filter.")
